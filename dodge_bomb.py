@@ -1,6 +1,7 @@
 import os
 import random
-import sys
+import sys   
+import time  
 import pygame as pg
 
 
@@ -22,6 +23,35 @@ def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     if rct.top < 0 or HEIGHT < rct.bottom:  # 縦方向のはみ出しチェック
         tate = False
     return yoko, tate
+
+def gameover(screen: pg.Surface) -> None:
+
+    black_sfc = pg.Surface((WIDTH, HEIGHT))
+    black_sfc.fill((0, 0, 0))
+    font = pg.font.Font(None, 100) 
+    txt_sfc = font.render("Game Over", True, (255, 255, 255))
+    txt_rct = txt_sfc.get_rect()
+    center_y = HEIGHT // 2  # Game Over と こうかとんをそろえるY座標
+    txt_rct.center = WIDTH // 2, center_y
+    # 泣いているこうかとん画像（fig/8.png）を2体分配置
+    cry_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 0.9)
+    cry_rct_l = cry_img.get_rect()   # 左のこうかとん
+    cry_rct_r = cry_img.get_rect()   # 右のこうかとん
+
+    cry_rct_l.center = txt_rct.left  - cry_rct_l.width // 2 - 20, center_y
+    cry_rct_r.center = txt_rct.right + cry_rct_r.width // 2 + 20, center_y
+
+    screen.blit(black_sfc, (0, 0))
+    screen.blit(txt_sfc, txt_rct)
+    screen.blit(cry_img, cry_rct_l)
+    screen.blit(cry_img, cry_rct_r)
+    pg.display.update()
+
+    time.sleep(5)
+
+
+    #font = pg.font.Font(None, 100)
+
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -30,6 +60,7 @@ def main():
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
     bb_img = pg.Surface((20, 20))  
+    bb_img.fill((0, 0, 0))    
     pg.draw.circle(bb_img, (255, 0, 0), (10, 10), 10)  
     bb_img.set_colorkey((0, 0, 0))  
     bb_rct = bb_img.get_rect()  
@@ -43,7 +74,7 @@ def main():
             if event.type == pg.QUIT: 
                 return
         if kk_rct.colliderect(bb_rct):  # こうかとんと爆弾が衝突したら
-            print("ゲームオーバー")
+            gameover(screen)
             return
         
         screen.blit(bg_img, [0, 0]) 
