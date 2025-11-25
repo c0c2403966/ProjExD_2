@@ -18,11 +18,27 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     
     yoko, tate = True, True
-    if rct.left < 0 or WIDTH <rct.right:  # 横方向のはみ出しチェック
+    if rct.left < 0 or WIDTH <rct.right:  
         yoko = False
-    if rct.top < 0 or HEIGHT < rct.bottom:  # 縦方向のはみ出しチェック
+    if rct.top < 0 or HEIGHT < rct.bottom:  
         tate = False
     return yoko, tate
+
+def init_bb_imgs() -> tuple[list[pg.Surface], list[int]]:
+    bb_imgs: list[pg.Surface] = []
+    bb_accs: list[int] = []
+ 
+    for r in range(1, 11):
+        size = 20 * r
+        bb_img = pg.Surface((size, size))
+        bb_img.fill((0, 0, 0))
+        # 半径がSurfaceにちょうど収まるように描画
+        pg.draw.circle(bb_img, (255, 0, 0), (size//2, size//2), size//2 - 2)
+        bb_img.set_colorkey((0, 0, 0))
+        bb_imgs.append(bb_img)
+        bb_accs.append(r)
+ 
+    return bb_imgs, bb_accs
 
 def gameover(screen: pg.Surface) -> None:
 
@@ -31,9 +47,9 @@ def gameover(screen: pg.Surface) -> None:
     font = pg.font.Font(None, 100) 
     txt_sfc = font.render("Game Over", True, (255, 255, 255))
     txt_rct = txt_sfc.get_rect()
-    center_y = HEIGHT // 2  # Game Over と こうかとんをそろえるY座標
+    center_y = HEIGHT // 2  
     txt_rct.center = WIDTH // 2, center_y
-    # 泣いているこうかとん画像（fig/8.png）を2体分配置
+   
     cry_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 0.9)
     cry_rct_l = cry_img.get_rect()   # 左のこうかとん
     cry_rct_r = cry_img.get_rect()   # 右のこうかとん
@@ -50,7 +66,7 @@ def gameover(screen: pg.Surface) -> None:
     time.sleep(5)
 
 
-    #font = pg.font.Font(None, 100)
+    
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
@@ -59,21 +75,22 @@ def main():
     kk_img = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
-    bb_img = pg.Surface((20, 20))  
-    bb_img.fill((0, 0, 0))    
-    pg.draw.circle(bb_img, (255, 0, 0), (10, 10), 10)  
-    bb_img.set_colorkey((0, 0, 0))  
-    bb_rct = bb_img.get_rect()  
-    bb_rct.centerx = random.randint(0, WIDTH)  
-    bb_rct.centery = random.randint(0, HEIGHT)  
-    vx, vy = +5, +5  
+   
+    bb_imgs, bb_accs = init_bb_imgs()
+    bb_img = bb_imgs[0]                 
+    bb_rct = bb_img.get_rect()
+    bb_rct.centerx = random.randint(0, WIDTH)
+    bb_rct.centery = random.randint(0, HEIGHT)
+    vx, vy = +5, +5
+
     clock = pg.time.Clock()
+
     tmr = 0
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: 
                 return
-        if kk_rct.colliderect(bb_rct):  # こうかとんと爆弾が衝突したら
+        if kk_rct.colliderect(bb_rct): 
             gameover(screen)
             return
         
@@ -106,12 +123,28 @@ def main():
         if check_bound(kk_rct) != (True, True):  
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])  
         screen.blit(kk_img, kk_rct)
+        
+        
+        idx = min(tmr // 50, 9)     
+ 
+        
+        bb_img = bb_imgs[idx]
+        
+        bb_rct.width  = bb_img.get_rect().width
+        bb_rct.height = bb_img.get_rect().height
+
+        
         yoko, tate = check_bound(bb_rct)
-        if not yoko:  
+        if not yoko:
             vx *= -1
-        if not tate:  
+        if not tate:
             vy *= -1
-        bb_rct.move_ip(vx, vy)
+ 
+        
+        avx = vx * bb_accs[idx]
+        avy = vy * bb_accs[idx]
+ 
+        bb_rct.move_ip(avx, avy)
         screen.blit(bb_img, bb_rct)
         pg.display.update()
         tmr += 1
